@@ -29,6 +29,100 @@ fn print_usage() {
     println!("  --help             show this help");
 }
 
+fn run(args: &[String]) {
+    if args.is_empty() {
+        print_usage();
+        return;
+    }
+
+    let mut opts = Options {
+        paths: Vec::new(),
+        pretty: false,
+        strip: false,
+        verbose: false,
+        threads: std::thread::available_parallelism()
+            .map(|n| n.get())
+            .unwrap_or(4),
+    };
+
+    let mut i = 0;
+    while i < args.len() {
+        match args[i].as_str() {
+            "--help" | "-h" => { print_usage(); return; }
+            "--pretty" => opts.pretty = true,
+            "--strip" => opts.strip = true,
+            "-v" | "--verbose" => opts.verbose = true,
+            "-t" | "--threads" => {
+                i += 1;
+                if i >= args.len() {
+                    eprintln!("mscrw: --threads needs a number");
+                    return;
+                }
+                opts.threads = args[i].parse().unwrap_or(1).max(1);
+            }
+            _ => opts.paths.push(PathBuf::from(&args[i])),
+        }
+        i += 1;
+    }
+
+    if opts.paths.is_empty() {
+        eprintln!("mscrw: no paths specified");
+        return;
+    }
+
+    let files = scanner::scan_all(&opts.paths, opts.verbose);
+
+    if opts.strip {
+        let mut stripped = 0;
+        for f in &files {
+            if f.is_dir { continue; }
+            let ext = f.extension.to_lowercase();
+            if strip::strip_file(&f.path, &ext) {
+                stripped += 1;
+                if opts.verbose {
+                    eprintln!("  stripped: {}", f.path.display());
+                }
+            }
+        }
+        if opts.verbose {
+            eprintln!("mscrw: stripped {}/{} files", stripped, files.len());
+        }
+        return;
+    }
+
+    let results = scanner::collect_all(files, opts.threads, opts.verbose);
+    let output = json::to_json(&results, opts.pretty);
+    println!("{}", output);
+}
+
+fn repl() {
+    print_usage();
+    println!("type 'exit' or 'quit' to close\n");
+
+    let stdin = std::io::stdin();
+    loop {
+        print!("mscrw> ");
+        std::io::stdout().flush().ok();
+
+        let mut line = String::new();
+        if stdin.read_line(&mut line).is_err() || line.is_empty() {
+            break;
+        }
+
+        let line = line.trim().to_string();
+        if line == "exit" || line == "quit" {
+            break;
+        }
+        if line.is_empty() {
+            continue;
+        }
+
+        let args: Vec<String> = line.split_whitespace().map(String::from).collect();
+        run(&args);
+        println!();
+    }
+}
+
 fn install_self(verbose: bool) {
     let exe = std::env::current_exe().expect("mscrw: could not determine executable path");
 
@@ -101,63 +195,11 @@ fn install_self(verbose: bool) {
 fn main() {
     install_self(std::env::args().any(|a| a == "-v" || a == "--verbose"));
 
-    let args: Vec<String> = std::env::args().collect();
-    let mut opts = Options {
-        paths: Vec::new(),
-        pretty: false,
-        strip: false,
-        verbose: false,
-        threads: std::thread::available_parallelism()
-            .map(|n| n.get())
-            .unwrap_or(4),
-    };
+    let args: Vec<String> = std::env::args().skip(1).collect();
 
-    let mut i = 1;
-    while i < args.len() {
-        match args[i].as_str() {
-            "--help" | "-h" => { print_usage(); return; }
-            "--pretty" => opts.pretty = true,
-            "--strip" => opts.strip = true,
-            "-v" | "--verbose" => opts.verbose = true,
-            "-t" | "--threads" => {
-                i += 1;
-                if i >= args.len() {
-                    eprintln!("mscrw: --threads needs a number");
-                    std::process::exit(1);
-                }
-                opts.threads = args[i].parse().unwrap_or(1).max(1);
-            }
-            _ => opts.paths.push(PathBuf::from(&args[i])),
-        }
-        i += 1;
+    if args.is_empty() {
+        repl();
+    } else {
+        run(&args);
     }
-
-    if opts.paths.is_empty() {
-        print_usage();
-        return;
-    }
-
-    let files = scanner::scan_all(&opts.paths, opts.verbose);
-
-    if opts.strip {
-        let mut stripped = 0;
-        for f in &files {
-            if f.is_dir { continue; }
-            let ext = f.extension.to_lowercase();
-            if strip::strip_file(&f.path, &ext) {
-                stripped += 1;
-                if opts.verbose {
-                    eprintln!("  stripped: {}", f.path.display());
-                }
-            }
-        }
-        if opts.verbose {
-            eprintln!("mscrw: stripped {}/{} files", stripped, files.len());
-        }
-        return;
-    }
-
-    let results = scanner::collect_all(files, opts.threads, opts.verbose);
-    let output = json::to_json(&results, opts.pretty);
-    println!("{}", output);
 }
