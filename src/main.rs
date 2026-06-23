@@ -4,12 +4,14 @@ mod text;
 mod strip;
 mod json;
 
+use std::io::Write;
 use std::path::PathBuf;
 
 struct Options {
     paths: Vec<PathBuf>,
     pretty: bool,
     strip: bool,
+    install: bool,
     verbose: bool,
     threads: usize,
 }
@@ -22,9 +24,67 @@ fn print_usage() {
     println!("options:");
     println!("  --strip            strip metadata from files in-place");
     println!("  --pretty           pretty-print json");
+    println!("  --install          install to path automatically");
     println!("  -v, --verbose      verbose output to stderr");
     println!("  -t, --threads <n>  worker threads");
     println!("  --help             show this help");
+}
+
+fn install_self() {
+    let exe = std::env::current_exe().expect("mcsrw: could not determine executable path");
+
+    #[cfg(windows)]
+    {
+        let local = std::env::var("LOCALAPPDATA")
+            .unwrap_or_else(|_| {
+                let user = std::env::var("USERPROFILE").unwrap_or_else(|_| "C:\\Users\\Default".into());
+                format!("{}\\AppData\\Local", user)
+            });
+        let dir = format!("{}\\mcsrw", local);
+        let bin = format!("{}\\mcsrw.exe", dir);
+        _ = std::fs::create_dir_all(&dir);
+        _ = std::fs::copy(&exe, &bin);
+
+        // add to user PATH via setx
+        let output = std::process::Command::new("setx")
+            .args(["PATH", &format!("%PATH%;{}", dir)])
+            .output();
+
+        match output {
+            Ok(o) if o.status.success() => {
+                println!("installed to {}", bin);
+                println!("restart your terminal for PATH changes to take effect");
+            }
+            _ => {
+                eprintln!("mcsrw: failed to add to PATH (try running as admin?)");
+                println!("installed to {}", bin);
+            }
+        }
+    }
+
+    #[cfg(not(windows))]
+    {
+        let home = std::env::var("HOME").unwrap_or_else(|_| "/home/kroown".into());
+        let dir = format!("{}/.local/bin", home);
+        let bin = format!("{}/mcsrw", dir);
+        _ = std::fs::create_dir_all(&dir);
+        _ = std::fs::copy(&exe, &bin);
+
+        let shell = std::env::var("SHELL").unwrap_or_default();
+        let rc = if shell.ends_with("zsh") { ".zshrc" } else { ".bashrc" };
+        let rc_path = format!("{}/{}", home, rc);
+
+        let path_line = format!("\nexport PATH=\"$PATH:{}\"\n", dir);
+        if !std::fs::read_to_string(&rc_path).unwrap_or_default().contains(&dir) {
+            _ = std::fs::OpenOptions::new()
+                .append(true)
+                .open(&rc_path)
+                .and_then(|mut f| f.write_all(path_line.as_bytes()));
+        }
+
+        println!("installed to {}", bin);
+        println!("run `source ~/{}` or restart your shell", rc);
+    }
 }
 
 fn main() {
@@ -33,6 +93,7 @@ fn main() {
         paths: Vec::new(),
         pretty: false,
         strip: false,
+        install: false,
         verbose: false,
         threads: std::thread::available_parallelism()
             .map(|n| n.get())
@@ -45,6 +106,7 @@ fn main() {
             "--help" | "-h" => { print_usage(); return; }
             "--pretty" => opts.pretty = true,
             "--strip" => opts.strip = true,
+            "--install" => opts.install = true,
             "-v" | "--verbose" => opts.verbose = true,
             "-t" | "--threads" => {
                 i += 1;
@@ -57,6 +119,11 @@ fn main() {
             _ => opts.paths.push(PathBuf::from(&args[i])),
         }
         i += 1;
+    }
+
+    if opts.install {
+        install_self();
+        return;
     }
 
     if opts.paths.is_empty() {

@@ -29,12 +29,21 @@ mcsrw --strip -v image.jpg
 mcsrw --threads 8 --pretty C:\Users\you\Pictures
 ```
 
+## install
+
+```
+mcsrw --install
+```
+
+copies itself to `%LOCALAPPDATA%\mcsrw\mcsrw.exe` (windows) or `~/.local/bin/mcsrw` (linux) and adds it to your PATH automatically.
+
 ## options
 
 | flag | description |
 |------|-------------|
 | `--pretty` | pretty-print json |
 | `--strip` | strip metadata in-place |
+| `--install` | install to path automatically |
 | `-v`, `--verbose` | verbose output |
 | `-t`, `--threads` | worker threads |
 | `--help` | show help |
