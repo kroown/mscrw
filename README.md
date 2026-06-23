@@ -1,8 +1,7 @@
 <p align="center">
   <img src="https://capsule-render.vercel.app/api?type=waving&color=auto&height=200&section=header&text=mcsrw&fontSize=70&fontAlignY=35&animation=twinkling">
 </p>
-
-<p align="center">
+<p align="center" style="margin-top: -8px;">
   metadata scraper · windows · rust
 </p>
 
