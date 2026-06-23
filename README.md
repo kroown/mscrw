@@ -3,7 +3,6 @@
 </p>
 
 <p align="center">
-  <b>mcsrw</b><br>
   metadata scraper · windows · rust
 </p>
 
