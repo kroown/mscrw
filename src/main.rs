@@ -17,9 +17,9 @@ struct Options {
 }
 
 fn print_usage() {
-    println!("mcsrw v{} - metadata scraper for windows", env!("CARGO_PKG_VERSION"));
+    println!("mscrw v{} - metadata scraper for windows", env!("CARGO_PKG_VERSION"));
     println!();
-    println!("usage: mcsrw [options] <path...>");
+    println!("usage: mscrw [options] <path...>");
     println!();
     println!("options:");
     println!("  --strip            strip metadata from files in-place");
@@ -30,7 +30,7 @@ fn print_usage() {
 }
 
 fn install_self(verbose: bool) {
-    let exe = std::env::current_exe().expect("mcsrw: could not determine executable path");
+    let exe = std::env::current_exe().expect("mscrw: could not determine executable path");
 
     #[cfg(windows)]
     {
@@ -39,8 +39,8 @@ fn install_self(verbose: bool) {
                 let user = std::env::var("USERPROFILE").unwrap_or_else(|_| "C:\\Users\\Default".into());
                 format!("{}\\AppData\\Local", user)
             });
-        let dir = format!("{}\\mcsrw", local);
-        let bin = format!("{}\\mcsrw.exe", dir);
+        let dir = format!("{}\\mscrw", local);
+        let bin = format!("{}\\mscrw.exe", dir);
         _ = std::fs::create_dir_all(&dir);
         _ = std::fs::copy(&exe, &bin);
 
@@ -55,7 +55,7 @@ fn install_self(verbose: bool) {
                     println!("restart your terminal for PATH changes to take effect");
                 }
                 _ => {
-                    eprintln!("mcsrw: failed to add to PATH (try running as admin?)");
+                    eprintln!("mscrw: failed to add to PATH (try running as admin?)");
                     println!("installed to {}", bin);
                 }
             }
@@ -66,7 +66,7 @@ fn install_self(verbose: bool) {
     {
         let home = std::env::var("HOME").unwrap_or_else(|_| "/home/kroown".into());
         let dir = format!("{}/.local/bin", home);
-        let bin = format!("{}/mcsrw", dir);
+        let bin = format!("{}/mscrw", dir);
         _ = std::fs::create_dir_all(&dir);
         _ = std::fs::copy(&exe, &bin);
 
@@ -113,7 +113,7 @@ fn main() {
             "-t" | "--threads" => {
                 i += 1;
                 if i >= args.len() {
-                    eprintln!("mcsrw: --threads needs a number");
+                    eprintln!("mscrw: --threads needs a number");
                     std::process::exit(1);
                 }
                 opts.threads = args[i].parse().unwrap_or(1).max(1);
@@ -143,7 +143,7 @@ fn main() {
             }
         }
         if opts.verbose {
-            eprintln!("mcsrw: stripped {}/{} files", stripped, files.len());
+            eprintln!("mscrw: stripped {}/{} files", stripped, files.len());
         }
         return;
     }

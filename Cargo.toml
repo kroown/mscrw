@@ -1,5 +1,5 @@
 [package]
-name = "mcsrw"
+name = "mscrw"
 version = "1.0.0"
 edition = "2021"
 description = "metadata scraper for windows"
