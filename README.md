@@ -30,11 +30,7 @@ mcsrw --threads 8 --pretty C:\Users\you\Pictures
 
 ## install
 
-```
-mcsrw --install
-```
-
-copies itself to `%LOCALAPPDATA%\mcsrw\mcsrw.exe` (windows) or `~/.local/bin/mcsrw` (linux) and adds it to your PATH automatically.
+download `mcsrw.exe` from the [releases page](https://github.com/kroown/mscrw/releases), or build from source — it auto-installs to `%LOCALAPPDATA%\mcsrw\mcsrw.exe` (windows) or `~/.local/bin/mcsrw` (linux) and adds itself to your PATH on first run.
 
 ## options
 
@@ -42,7 +38,6 @@ copies itself to `%LOCALAPPDATA%\mcsrw\mcsrw.exe` (windows) or `~/.local/bin/mcs
 |------|-------------|
 | `--pretty` | pretty-print json |
 | `--strip` | strip metadata in-place |
-| `--install` | install to path automatically |
 | `-v`, `--verbose` | verbose output |
 | `-t`, `--threads` | worker threads |
 | `--help` | show help |
@@ -70,14 +65,10 @@ copies itself to `%LOCALAPPDATA%\mcsrw\mcsrw.exe` (windows) or `~/.local/bin/mcs
 }
 ```
 
-## install
-
-download `mcsrw.exe` from the [releases page](https://github.com/kroown/mcsrw/releases).
-
 ## build from source
 
 ```powershell
-git clone https://github.com/kroown/mcsrw.git
+git clone https://github.com/kroown/mscrw.git
 cd mcsrw
 cargo build --release
 .\target\release\mcsrw.exe --help

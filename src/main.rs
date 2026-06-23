@@ -12,7 +12,6 @@ struct Options {
     paths: Vec<PathBuf>,
     pretty: bool,
     strip: bool,
-    install: bool,
     verbose: bool,
     threads: usize,
 }
@@ -25,13 +24,12 @@ fn print_usage() {
     println!("options:");
     println!("  --strip            strip metadata from files in-place");
     println!("  --pretty           pretty-print json");
-    println!("  --install          install to path automatically");
     println!("  -v, --verbose      verbose output to stderr");
     println!("  -t, --threads <n>  worker threads");
     println!("  --help             show this help");
 }
 
-fn install_self() {
+fn install_self(verbose: bool) {
     let exe = std::env::current_exe().expect("mcsrw: could not determine executable path");
 
     #[cfg(windows)]
@@ -46,19 +44,20 @@ fn install_self() {
         _ = std::fs::create_dir_all(&dir);
         _ = std::fs::copy(&exe, &bin);
 
-        // add to user PATH via setx
         let output = std::process::Command::new("setx")
             .args(["PATH", &format!("%PATH%;{}", dir)])
             .output();
 
-        match output {
-            Ok(o) if o.status.success() => {
-                println!("installed to {}", bin);
-                println!("restart your terminal for PATH changes to take effect");
-            }
-            _ => {
-                eprintln!("mcsrw: failed to add to PATH (try running as admin?)");
-                println!("installed to {}", bin);
+        if verbose {
+            match output {
+                Ok(o) if o.status.success() => {
+                    println!("installed to {}", bin);
+                    println!("restart your terminal for PATH changes to take effect");
+                }
+                _ => {
+                    eprintln!("mcsrw: failed to add to PATH (try running as admin?)");
+                    println!("installed to {}", bin);
+                }
             }
         }
     }
@@ -83,18 +82,21 @@ fn install_self() {
                 .and_then(|mut f| f.write_all(path_line.as_bytes()));
         }
 
-        println!("installed to {}", bin);
-        println!("run `source ~/{}` or restart your shell", rc);
+        if verbose {
+            println!("installed to {}", bin);
+            println!("run `source ~/{}` or restart your shell", rc);
+        }
     }
 }
 
 fn main() {
+    install_self(std::env::args().any(|a| a == "-v" || a == "--verbose"));
+
     let args: Vec<String> = std::env::args().collect();
     let mut opts = Options {
         paths: Vec::new(),
         pretty: false,
         strip: false,
-        install: false,
         verbose: false,
         threads: std::thread::available_parallelism()
             .map(|n| n.get())
@@ -107,7 +109,6 @@ fn main() {
             "--help" | "-h" => { print_usage(); return; }
             "--pretty" => opts.pretty = true,
             "--strip" => opts.strip = true,
-            "--install" => opts.install = true,
             "-v" | "--verbose" => opts.verbose = true,
             "-t" | "--threads" => {
                 i += 1;
@@ -120,11 +121,6 @@ fn main() {
             _ => opts.paths.push(PathBuf::from(&args[i])),
         }
         i += 1;
-    }
-
-    if opts.install {
-        install_self();
-        return;
     }
 
     if opts.paths.is_empty() {
