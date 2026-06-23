@@ -82,9 +82,11 @@ fn get_windows_attrs(_path: &Path) -> (bool, bool, bool) {
 fn get_creation_time(path: &Path) -> u64 {
     use std::os::windows::fs::MetadataExt;
     std::fs::metadata(path).ok()
-        .and_then(|m| m.creation_time().ok())
-        .and_then(|t| t.duration_since(UNIX_EPOCH).ok())
-        .map(|d| d.as_nanos() as u64)
+        .map(|m| {
+            let filetime = m.creation_time();
+            let epoch_diff = 116_444_736_00u64.saturating_mul(10_000_000);
+            filetime.saturating_sub(epoch_diff).saturating_mul(100)
+        })
         .unwrap_or(0)
 }
 
@@ -110,6 +112,7 @@ fn get_unix_owner(_path: &Path) -> (String, String) {
     ("-".into(), "-".into())
 }
 
+#[allow(unused_variables)]
 fn format_permissions(path: &Path, is_dir: bool) -> (String, u32) {
     #[cfg(unix)]
     {

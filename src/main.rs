@@ -4,6 +4,7 @@ mod text;
 mod strip;
 mod json;
 
+#[cfg_attr(windows, allow(unused_imports))]
 use std::io::Write;
 use std::path::PathBuf;
 
