@@ -2,7 +2,7 @@
   <img src="https://capsule-render.vercel.app/api?type=waving&color=CE422B&height=200&section=header&text=mcsrw&fontSize=70&fontAlignY=35&animation=twinkling">
 </p>
 <p align="center" style="margin-top: -8px;">
-  mscr, but for windows
+  metadata scraper · windows · rust
 </p>
 
 <p align="center">
