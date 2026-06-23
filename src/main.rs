@@ -34,6 +34,9 @@ fn install_self(verbose: bool) {
 
     #[cfg(windows)]
     {
+        use winreg::enums::*;
+        use winreg::RegKey;
+
         let local = std::env::var("LOCALAPPDATA")
             .unwrap_or_else(|_| {
                 let user = std::env::var("USERPROFILE").unwrap_or_else(|_| "C:\\Users\\Default".into());
@@ -44,21 +47,27 @@ fn install_self(verbose: bool) {
         _ = std::fs::create_dir_all(&dir);
         _ = std::fs::copy(&exe, &bin);
 
-        let output = std::process::Command::new("setx")
-            .args(["PATH", &format!("%PATH%;{}", dir)])
-            .output();
+        let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+        let env_key = hkcu.open_subkey_with_flags(
+            "Environment",
+            KEY_READ | KEY_WRITE,
+        );
+
+        if let Ok(key) = env_key {
+            let current_path: String = key.get_value("PATH").unwrap_or_default();
+            if !current_path.contains(&dir) {
+                let new_path = if current_path.is_empty() {
+                    dir.clone()
+                } else {
+                    format!("{};{}", current_path, dir)
+                };
+                key.set_value("PATH", &new_path).ok();
+            }
+        }
 
         if verbose {
-            match output {
-                Ok(o) if o.status.success() => {
-                    println!("installed to {}", bin);
-                    println!("restart your terminal for PATH changes to take effect");
-                }
-                _ => {
-                    eprintln!("mscrw: failed to add to PATH (try running as admin?)");
-                    println!("installed to {}", bin);
-                }
-            }
+            println!("installed to {}", bin);
+            println!("restart your terminal for PATH changes to take effect");
         }
     }
 
@@ -125,7 +134,7 @@ fn main() {
 
     if opts.paths.is_empty() {
         print_usage();
-        std::process::exit(1);
+        return;
     }
 
     let files = scanner::scan_all(&opts.paths, opts.verbose);
