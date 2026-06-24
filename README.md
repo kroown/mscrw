@@ -9,7 +9,7 @@
   <img src="https://skillicons.dev/icons?i=windows,rust">
 </p>
 
-scans files recursively, extracts metadata, and can strip it in-place. no external dependencies — just the binary.
+scans files recursively, extracts metadata, and can strip it in-place. no external dependencies 
 
 ## features
 
