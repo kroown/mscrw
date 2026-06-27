@@ -1,9 +1,6 @@
-<p align="center">
-  <img src="https://capsule-render.vercel.app/api?type=waving&color=CE422B&height=200&section=header&text=mscrw&fontSize=70&fontAlignY=35&animation=twinkling">
-</p>
-<p align="center" style="margin-top: -8px;">
-  metadata scraper · windows · rust
-</p>
+# mscrw
+
+metadata scraper · windows · rust
 
 <p align="center">
   <img src="https://skillicons.dev/icons?i=windows,rust">
@@ -74,6 +71,4 @@ cargo build --release
 .\target\release\mscrw.exe --help
 ```
 
-<p align="center">
-  <img src="https://capsule-render.vercel.app/api?type=waving&color=CE422B&height=100&section=footer">
-</p>
+
